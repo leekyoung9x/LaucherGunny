@@ -52,6 +52,15 @@
               </router-link>
             </li>
             <li>
+              <router-link 
+                to="/game" 
+                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
+                active-class="text-primary"
+              >
+                Chơi Game
+              </router-link>
+            </li>
+            <li>
               <button 
                 @click="handleLogout"
                 class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0 text-destructive"

@@ -1,11 +1,14 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import axios from 'axios'
-import https from 'https'
+const { app, BrowserWindow, ipcMain } = require('electron')
+const path = require('path')
+const axios = require('axios')
+const https = require('https')
+const fs = require('fs').promises
+const os = require('os')
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+// __dirname is already available in CommonJS, no need to redefine it
+
+// Disable security warnings in development
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
 
 // Create axios instance with SSL certificate validation disabled for development
 // WARNING: Only use this in development. For production, use proper SSL certificates
@@ -16,6 +19,37 @@ const httpsAgent = new https.Agent({
 let loginWindow = null
 let mainWindow = null
 let isLoggingOut = false
+
+//region enable flash
+let pluginName = null; //put the right flash plugin in depending on the operating system.
+switch (process.platform) {
+  case 'win32':
+      pluginName = 'pepflashplayer.dll';
+    break
+  case 'linux':
+      pluginName = 'libpepflashplayer.so';
+      app.commandLine.appendSwitch('no-sandbox');
+    break;
+  case 'darwin':
+    pluginName = 'PepperFlashPlayer.plugin'
+    break;
+}
+app.commandLine.appendSwitch("disable-renderer-backgrounding");
+if (process.platform !== "darwin") {
+  app.commandLine.appendSwitch('high-dpi-support', "1");
+  //app.commandLine.appendSwitch('force-device-scale-factor', "1");
+  app.commandLine.appendSwitch("--enable-npapi");
+}
+//
+// app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname, 'flashver/' + pluginName));
+console.log(path.join(__dirname.includes(".asar") ? process.resourcesPath : __dirname, "flashver/" + pluginName));
+app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname.includes(".asar") ? process.resourcesPath : __dirname, "flashver/" + pluginName));
+app.commandLine.appendSwitch('disable-site-isolation-trials');
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
+app.commandLine.appendSwitch('allow-insecure-localhost', 'true');
+app.commandLine.appendSwitch('incognito');
+//endregion
 
 function createLoginWindow() {
   const iconPath = process.env.VITE_DEV_SERVER_URL 
@@ -30,7 +64,7 @@ function createLoginWindow() {
     autoHideMenuBar: true,
     icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../electron/preload.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -43,6 +77,16 @@ function createLoginWindow() {
       hash: 'login'
     })
   }
+
+  // Set Content Security Policy
+  loginWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: data: blob:"]
+      }
+    })
+  })
 
   loginWindow.on('closed', () => {
     loginWindow = null
@@ -65,9 +109,11 @@ function createMainWindow() {
     autoHideMenuBar: true,
     icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../electron/preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      plugins: true,
+      webSecurity: false
     }
   })
 
@@ -77,6 +123,16 @@ function createMainWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
+
+  // Set Content Security Policy
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: data: blob:"]
+      }
+    })
+  })
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
@@ -119,8 +175,12 @@ ipcMain.handle('api-request', async (event, { method, url, data, headers, params
       method,
       url,
       headers: headers || {},
-      timeout: 30000,
-      httpsAgent: httpsAgent // Add HTTPS agent to handle SSL certificates
+      timeout: 30000
+    }
+
+    // Only add HTTPS agent for HTTPS URLs
+    if (url.startsWith('https://')) {
+      config.httpsAgent = httpsAgent
     }
 
     if (data) {
@@ -154,7 +214,6 @@ ipcMain.handle('api-request', async (event, { method, url, data, headers, params
 // File system operations
 ipcMain.handle('read-file', async (event, filePath) => {
   try {
-    const fs = await import('fs/promises')
     const content = await fs.readFile(filePath, 'utf-8')
     return { success: true, data: content }
   } catch (error) {
@@ -164,7 +223,6 @@ ipcMain.handle('read-file', async (event, filePath) => {
 
 ipcMain.handle('write-file', async (event, { filePath, content }) => {
   try {
-    const fs = await import('fs/promises')
     await fs.writeFile(filePath, content, 'utf-8')
     return { success: true }
   } catch (error) {
@@ -174,7 +232,6 @@ ipcMain.handle('write-file', async (event, { filePath, content }) => {
 
 // System info
 ipcMain.handle('get-system-info', async () => {
-  const os = await import('os')
   return {
     platform: process.platform,
     arch: process.arch,

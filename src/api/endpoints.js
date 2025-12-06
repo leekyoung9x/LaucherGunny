@@ -46,6 +46,11 @@ export const authApi = {
   // Refresh token
   refreshToken(token) {
     return api.post('/auth/refresh', { token })
+  },
+  
+  // Login game
+  loginGame() {
+    return api.get('/Users/login-game')
   }
 }
 
