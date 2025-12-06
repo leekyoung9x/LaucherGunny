@@ -11,12 +11,17 @@ let mainWindow = null
 let isLoggingOut = false
 
 function createLoginWindow() {
+  const iconPath = process.env.VITE_DEV_SERVER_URL 
+    ? path.join(__dirname, '../build/icon.ico')
+    : path.join(__dirname, '../build/icon.ico')
+  
   loginWindow = new BrowserWindow({
     width: 400,
     height: 500,
     resizable: false,
     frame: true,
     autoHideMenuBar: true,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -42,11 +47,16 @@ function createLoginWindow() {
 }
 
 function createMainWindow() {
+  const iconPath = process.env.VITE_DEV_SERVER_URL 
+    ? path.join(__dirname, '../build/icon.ico')
+    : path.join(__dirname, '../build/icon.ico')
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
     autoHideMenuBar: true,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
