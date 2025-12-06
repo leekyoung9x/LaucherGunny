@@ -1,11 +1,26 @@
 import axios from 'axios'
 import { electronApi } from './electron'
+import router from '@/router'
 
 // Base API URL - change this to your API endpoint
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7062/api'
 
 // Detect if running in Electron
 const isElectron = typeof window !== 'undefined' && window.electronAPI
+
+// Logout handler function
+const handleUnauthorized = () => {
+  // Clear local storage
+  localStorage.clear()
+  
+  // Trigger logout in Electron if available
+  if (isElectron && window.electronAPI?.logout) {
+    window.electronAPI.logout()
+  }
+  
+  // Redirect to login page
+  router.push('/login')
+}
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -56,9 +71,9 @@ apiClient.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
-          localStorage.removeItem('token')
-          console.error('Unauthorized access')
+          // Unauthorized - auto logout
+          console.error('Unauthorized access - logging out')
+          handleUnauthorized()
           break
         case 403:
           console.error('Forbidden access')
@@ -85,68 +100,103 @@ apiClient.interceptors.response.use(
 // API methods
 export const api = {
   // GET request
-  get(url, config = {}) {
-    if (isElectron) {
-      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
-      const token = localStorage.getItem('token')
-      const headers = { ...config.headers }
-      if (token) headers.Authorization = `Bearer ${token}`
-      
-      return electronApi.get(fullUrl, { ...config, headers })
+  async get(url, config = {}) {
+    try {
+      if (isElectron) {
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+        const token = localStorage.getItem('token')
+        const headers = { ...config.headers }
+        if (token) headers.Authorization = `Bearer ${token}`
+        
+        return await electronApi.get(fullUrl, { ...config, headers })
+      }
+      return await apiClient.get(url, config)
+    } catch (error) {
+      if (error.status === 401) {
+        handleUnauthorized()
+      }
+      throw error
     }
-    return apiClient.get(url, config)
   },
   
   // POST request
-  post(url, data = {}, config = {}) {
-    if (isElectron) {
-      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
-      const token = localStorage.getItem('token')
-      const headers = { ...config.headers }
-      if (token) headers.Authorization = `Bearer ${token}`
-      
-      return electronApi.post(fullUrl, data, { ...config, headers })
+  async post(url, data = {}, config = {}) {
+    try {
+      if (isElectron) {
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+        const token = localStorage.getItem('token')
+        const headers = { ...config.headers }
+        if (token) headers.Authorization = `Bearer ${token}`
+        
+        return await electronApi.post(fullUrl, data, { ...config, headers })
+      }
+      return await apiClient.post(url, data, config)
+    } catch (error) {
+      if (error.status === 401) {
+        handleUnauthorized()
+      }
+      throw error
     }
-    return apiClient.post(url, data, config)
   },
   
   // PUT request
-  put(url, data = {}, config = {}) {
-    if (isElectron) {
-      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
-      const token = localStorage.getItem('token')
-      const headers = { ...config.headers }
-      if (token) headers.Authorization = `Bearer ${token}`
-      
-      return electronApi.put(fullUrl, data, { ...config, headers })
+  async put(url, data = {}, config = {}) {
+    try {
+      if (isElectron) {
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+        const token = localStorage.getItem('token')
+        const headers = { ...config.headers }
+        if (token) headers.Authorization = `Bearer ${token}`
+        
+        return await electronApi.put(fullUrl, data, { ...config, headers })
+      }
+      return await apiClient.put(url, data, config)
+    } catch (error) {
+      if (error.status === 401) {
+        handleUnauthorized()
+      }
+      throw error
     }
-    return apiClient.put(url, data, config)
   },
   
   // PATCH request
-  patch(url, data = {}, config = {}) {
-    if (isElectron) {
-      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
-      const token = localStorage.getItem('token')
-      const headers = { ...config.headers }
-      if (token) headers.Authorization = `Bearer ${token}`
-      
-      return electronApi.patch(fullUrl, data, { ...config, headers })
+  async patch(url, data = {}, config = {}) {
+    try {
+      if (isElectron) {
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+        const token = localStorage.getItem('token')
+        const headers = { ...config.headers }
+        if (token) headers.Authorization = `Bearer ${token}`
+        
+        return await electronApi.patch(fullUrl, data, { ...config, headers })
+      }
+      return await apiClient.patch(url, data, config)
+    } catch (error) {
+      if (error.status === 401) {
+        handleUnauthorized()
+      }
+      throw error
     }
-    return apiClient.patch(url, data, config)
   },
   
   // DELETE request
-  delete(url, config = {}) {
-    if (isElectron) {
-      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
-      const token = localStorage.getItem('token')
-      const headers = { ...config.headers }
-      if (token) headers.Authorization = `Bearer ${token}`
-      
-      return electronApi.delete(fullUrl, { ...config, headers })
+  async delete(url, config = {}) {
+    try {
+      if (isElectron) {
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+        const token = localStorage.getItem('token')
+        const headers = { ...config.headers }
+        if (token) headers.Authorization = `Bearer ${token}`
+        
+        return await electronApi.delete(fullUrl, { ...config, headers })
+      }
+      return await apiClient.delete(url, config)
+    } catch (error) {
+      if (error.status === 401) {
+        handleUnauthorized()
+      }
+      throw error
     }
-    return apiClient.delete(url, config)
   }
 }
 
