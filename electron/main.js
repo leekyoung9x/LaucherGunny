@@ -16,6 +16,7 @@ function createLoginWindow() {
     height: 500,
     resizable: false,
     frame: true,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -41,6 +42,7 @@ function createMainWindow() {
     width: 1200,
     height: 800,
     show: false,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
