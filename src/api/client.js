@@ -2,7 +2,7 @@ import axios from 'axios'
 import { electronApi } from './electron'
 
 // Base API URL - change this to your API endpoint
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7062/api'
 
 // Detect if running in Electron
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -13,7 +13,7 @@ const apiClient = axios.create({
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': '*/*'
   }
 })
 

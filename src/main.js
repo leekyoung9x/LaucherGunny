@@ -5,6 +5,7 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import 'flowbite'
+import 'vue-sonner/style.css'
 
 const app = createApp(App)
 const pinia = createPinia()

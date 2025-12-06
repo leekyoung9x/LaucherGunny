@@ -2,9 +2,16 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import axios from 'axios'
+import https from 'https'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Create axios instance with SSL certificate validation disabled for development
+// WARNING: Only use this in development. For production, use proper SSL certificates
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+})
 
 let loginWindow = null
 let mainWindow = null
@@ -112,7 +119,8 @@ ipcMain.handle('api-request', async (event, { method, url, data, headers, params
       method,
       url,
       headers: headers || {},
-      timeout: 30000
+      timeout: 30000,
+      httpsAgent: httpsAgent // Add HTTPS agent to handle SSL certificates
     }
 
     if (data) {

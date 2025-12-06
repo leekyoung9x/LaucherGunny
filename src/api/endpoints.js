@@ -27,7 +27,10 @@ export const userApi = {
 export const authApi = {
   // Login
   login(credentials) {
-    return api.post('/auth/login', credentials)
+    return api.post('/Users/login', {
+      userName: credentials.userName,
+      password: credentials.password
+    })
   },
   
   // Register
