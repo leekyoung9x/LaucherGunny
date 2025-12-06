@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen">
+  <div v-if="isLoginPage" class="min-h-screen">
+    <router-view />
+  </div>
+  
+  <div v-else class="min-h-screen">
     <!-- Navbar -->
     <nav class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -38,6 +42,14 @@
                 About
               </router-link>
             </li>
+            <li>
+              <button 
+                @click="handleLogout"
+                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0 text-destructive"
+              >
+                Logout
+              </button>
+            </li>
           </ul>
         </div>
       </div>
@@ -49,7 +61,34 @@
 </template>
 
 <script>
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
 export default {
-  name: 'App'
+  name: 'App',
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+    const authStore = useAuthStore()
+    
+    const isLoginPage = computed(() => route.path === '/login')
+    
+    const handleLogout = () => {
+      authStore.logout()
+      
+      // Notify Electron to show login window
+      if (window.electronAPI) {
+        window.electronAPI.logout()
+      } else {
+        router.push('/login')
+      }
+    }
+    
+    return {
+      isLoginPage,
+      handleLogout
+    }
+  }
 }
 </script>
