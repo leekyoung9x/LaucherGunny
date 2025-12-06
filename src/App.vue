@@ -70,7 +70,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -80,6 +80,17 @@ export default {
     const route = useRoute()
     const router = useRouter()
     const authStore = useAuthStore()
+
+    // Check if already logged in on mount
+    onMounted(() => {
+      const token = localStorage.getItem('token')
+      if (token && window.electronAPI) {
+        // User is already logged in, switch to main window
+        authStore.isAuthenticated = true
+        authStore.token = token
+        window.electronAPI.showMainWindow()
+      }
+    })
     
     const isLoginPage = computed(() => route.path === '/login')
     

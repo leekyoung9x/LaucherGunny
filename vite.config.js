@@ -12,6 +12,8 @@ export default defineConfig({
         entry: 'electron/main.js',
         vite: {
           build: {
+            sourcemap: true,
+            minify: false,
             rollupOptions: {
               external: ['electron']
             }
@@ -25,6 +27,8 @@ export default defineConfig({
         },
         vite: {
           build: {
+            sourcemap: true,
+            minify: false,
             rollupOptions: {
               external: ['electron'],
               output: {

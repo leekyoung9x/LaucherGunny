@@ -73,7 +73,8 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
         this.isAuthenticated = false
         
-        localStorage.removeItem('token')
+        // Clear all localStorage data
+        localStorage.clear()
       }
     },
     

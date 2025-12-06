@@ -34,6 +34,10 @@ function createLoginWindow() {
 
   loginWindow.on('closed', () => {
     loginWindow = null
+    // Quit app if login window is closed and no main window exists
+    if (!mainWindow && !isLoggingOut) {
+      app.quit()
+    }
   })
 }
 
@@ -63,10 +67,6 @@ function createMainWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null
-    // Only quit app if not logging out
-    if (!isLoggingOut) {
-      app.quit()
-    }
   })
 }
 
@@ -82,9 +82,11 @@ ipcMain.on('login-success', () => {
 ipcMain.on('logout', () => {
   isLoggingOut = true
   
-  if (mainWindow) {
-    mainWindow.close()
-  }
+  setTimeout(() => {
+    if (mainWindow) {
+      mainWindow.close()
+    }
+  }, 200)
   
   // Wait a bit for main window to close, then create login window
   setTimeout(() => {
@@ -166,7 +168,24 @@ ipcMain.handle('get-system-info', async () => {
   }
 })
 
+// Check login status
+ipcMain.handle('check-login-status', async () => {
+  // This will be called from renderer to check localStorage
+  return { needsCheck: true }
+})
+
+// Switch to main window (called when token exists)
+ipcMain.on('show-main-window', () => {
+  if (loginWindow) {
+    loginWindow.close()
+  }
+  if (!mainWindow) {
+    createMainWindow()
+  }
+})
+
 app.whenReady().then(() => {
+  // Always start with login window, let the renderer decide
   createLoginWindow()
 
   app.on('activate', () => {
