@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@radix-icons/vue": "^1.0.0",
+    "axios": "^1.6.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "flowbite": "^2.2.0",
