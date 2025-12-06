@@ -1,7 +1,11 @@
 import axios from 'axios'
+import { electronApi } from './electron'
 
 // Base API URL - change this to your API endpoint
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com'
+
+// Detect if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -82,28 +86,71 @@ apiClient.interceptors.response.use(
 export const api = {
   // GET request
   get(url, config = {}) {
+    if (isElectron) {
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+      const token = localStorage.getItem('token')
+      const headers = { ...config.headers }
+      if (token) headers.Authorization = `Bearer ${token}`
+      
+      return electronApi.get(fullUrl, { ...config, headers })
+    }
     return apiClient.get(url, config)
   },
   
   // POST request
   post(url, data = {}, config = {}) {
+    if (isElectron) {
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+      const token = localStorage.getItem('token')
+      const headers = { ...config.headers }
+      if (token) headers.Authorization = `Bearer ${token}`
+      
+      return electronApi.post(fullUrl, data, { ...config, headers })
+    }
     return apiClient.post(url, data, config)
   },
   
   // PUT request
   put(url, data = {}, config = {}) {
+    if (isElectron) {
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+      const token = localStorage.getItem('token')
+      const headers = { ...config.headers }
+      if (token) headers.Authorization = `Bearer ${token}`
+      
+      return electronApi.put(fullUrl, data, { ...config, headers })
+    }
     return apiClient.put(url, data, config)
   },
   
   // PATCH request
   patch(url, data = {}, config = {}) {
+    if (isElectron) {
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+      const token = localStorage.getItem('token')
+      const headers = { ...config.headers }
+      if (token) headers.Authorization = `Bearer ${token}`
+      
+      return electronApi.patch(fullUrl, data, { ...config, headers })
+    }
     return apiClient.patch(url, data, config)
   },
   
   // DELETE request
   delete(url, config = {}) {
+    if (isElectron) {
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+      const token = localStorage.getItem('token')
+      const headers = { ...config.headers }
+      if (token) headers.Authorization = `Bearer ${token}`
+      
+      return electronApi.delete(fullUrl, { ...config, headers })
+    }
     return apiClient.delete(url, config)
   }
 }
+
+// Export electron API for direct access
+export { electronApi }
 
 export default apiClient

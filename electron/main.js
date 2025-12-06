@@ -1,12 +1,14 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import axios from 'axios'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 let loginWindow = null
 let mainWindow = null
+let isLoggingOut = false
 
 function createLoginWindow() {
   loginWindow = new BrowserWindow({
@@ -59,7 +61,10 @@ function createMainWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null
-    app.quit()
+    // Only quit app if not logging out
+    if (!isLoggingOut) {
+      app.quit()
+    }
   })
 }
 
@@ -73,10 +78,90 @@ ipcMain.on('login-success', () => {
 
 // IPC handler for logout
 ipcMain.on('logout', () => {
+  isLoggingOut = true
+  
   if (mainWindow) {
     mainWindow.close()
   }
-  createLoginWindow()
+  
+  // Wait a bit for main window to close, then create login window
+  setTimeout(() => {
+    createLoginWindow()
+    isLoggingOut = false
+  }, 100)
+})
+
+// API Handlers
+ipcMain.handle('api-request', async (event, { method, url, data, headers, params }) => {
+  try {
+    const config = {
+      method,
+      url,
+      headers: headers || {},
+      timeout: 30000
+    }
+
+    if (data) {
+      config.data = data
+    }
+
+    if (params) {
+      config.params = params
+    }
+
+    const response = await axios(config)
+    
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+      headers: response.headers
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      }
+    }
+  }
+})
+
+// File system operations
+ipcMain.handle('read-file', async (event, filePath) => {
+  try {
+    const fs = await import('fs/promises')
+    const content = await fs.readFile(filePath, 'utf-8')
+    return { success: true, data: content }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('write-file', async (event, { filePath, content }) => {
+  try {
+    const fs = await import('fs/promises')
+    await fs.writeFile(filePath, content, 'utf-8')
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
+// System info
+ipcMain.handle('get-system-info', async () => {
+  const os = await import('os')
+  return {
+    platform: process.platform,
+    arch: process.arch,
+    version: process.version,
+    hostname: os.hostname(),
+    cpus: os.cpus().length,
+    totalMemory: os.totalmem(),
+    freeMemory: os.freemem()
+  }
 })
 
 app.whenReady().then(() => {
