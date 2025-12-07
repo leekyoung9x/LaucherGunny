@@ -9,7 +9,7 @@
       <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <router-link to="/" class="flex items-center space-x-3">
           <span class="self-center text-2xl font-semibold whitespace-nowrap">
-            Electron + Vue 3
+            Gunny Version 5.5
           </span>
         </router-link>
         <button 
