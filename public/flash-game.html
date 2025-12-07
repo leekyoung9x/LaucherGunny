@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDTank Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #flash-container {
+            width: 1000px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div id="flash-container"></div>
+    
+    <script>
+        // Get parameters from URL
+        const params = new URLSearchParams(window.location.search);
+        const swfUrl = params.get('swf');
+        const flashvars = params.get('vars');
+        
+        console.log('Flash Game Loader');
+        console.log('SWF URL:', swfUrl);
+        console.log('Flash vars:', flashvars);
+        
+        // Check for Flash plugin
+        const checkFlashPlugin = () => {
+            const plugins = Array.from(navigator.plugins);
+            console.log('Total plugins:', plugins.length);
+            
+            plugins.forEach((plugin, index) => {
+                console.log(`Plugin ${index}: ${plugin.name}`);
+            });
+            
+            const hasFlash = plugins.some(p => 
+                p.name.toLowerCase().includes('flash') || 
+                p.name.toLowerCase().includes('shockwave')
+            );
+            
+            if (hasFlash) {
+                console.log('✅ Flash plugin detected!');
+                return true;
+            } else {
+                console.error('❌ No Flash plugin found!');
+                return false;
+            }
+        };
+        
+        if (!swfUrl) {
+            console.error('No SWF URL provided!');
+            document.body.innerHTML = '<div style="color: white; padding: 20px;">Error: No game URL provided</div>';
+        } else if (!checkFlashPlugin()) {
+            console.error('Flash plugin not available!');
+            document.body.innerHTML = '<div style="color: white; padding: 20px;">Error: Flash plugin not found</div>';
+        } else {
+            // Create Flash embed
+            const flashHTML = `
+                <embed id="ddt-game"
+                       name="Main"
+                       src="${swfUrl}"
+                       flashvars="${flashvars || ''}"
+                       type="application/x-shockwave-flash"
+                       width="1000" 
+                       height="600" 
+                       quality="high"
+                       bgcolor="#000000"
+                       allowscriptaccess="always"
+                       allowfullscreen="true"
+                       wmode="direct"
+                       play="true"
+                       loop="false"
+                       menu="false"
+                       pluginspage="http://www.adobe.com/go/getflashplayer">
+            `;
+            
+            console.log('Creating Flash embed...');
+            document.getElementById('flash-container').innerHTML = flashHTML;
+            
+            // Monitor Flash loading
+            setTimeout(() => {
+                const flashEmbed = document.getElementById('ddt-game');
+                if (flashEmbed) {
+                    console.log('Flash embed created');
+                    console.log('Type:', flashEmbed.type);
+                    console.log('Width:', flashEmbed.offsetWidth);
+                    console.log('Height:', flashEmbed.offsetHeight);
+                    console.log('ReadyState:', flashEmbed.readyState);
+                    
+                    // Try clicking to activate
+                    flashEmbed.click();
+                } else {
+                    console.error('Flash embed not found!');
+                }
+            }, 500);
+            
+            // Check after 3 seconds
+            setTimeout(() => {
+                const flashEmbed = document.getElementById('ddt-game');
+                if (flashEmbed) {
+                    console.log('=== 3 Second Check ===');
+                    console.log('ReadyState:', flashEmbed.readyState);
+                    if (flashEmbed.readyState === 4 || flashEmbed.readyState === 'complete') {
+                        console.log('✅ Flash loaded successfully!');
+                    } else {
+                        console.log('⚠️ Flash may still be loading...');
+                    }
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

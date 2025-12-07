@@ -3,13 +3,25 @@ import vue from '@vitejs/plugin-vue'
 import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import path from 'path'
+import fs from 'fs-extra'
 
 export default defineConfig({
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag === 'webview'
+        }
+      }
+    }),
     electron([
       {
         entry: 'electron/main.js',
+        onstart(options) {
+          // Copy flashver folder to dist-electron
+          fs.copySync('flashver', 'dist-electron/flashver', { overwrite: true })
+          options.startup()
+        },
         vite: {
           build: {
             sourcemap: true,

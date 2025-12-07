@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: data: blob:">
+    <title>DDTank Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+        }
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <script>
+        // This page will be loaded in main window, not webview
+        console.log('Game page loaded');
+        console.log('Plugins:', navigator.plugins.length);
+        
+        for (let i = 0; i < navigator.plugins.length; i++) {
+            console.log('Plugin ' + i + ':', navigator.plugins[i].name);
+        }
+        
+        // Get game URL from query string or use default
+        const urlParams = new URLSearchParams(window.location.search);
+        const swfUrl = urlParams.get('swf') || 'http://129.212.239.167/flash/Loading.swf?user=1&key=test&config=http://129.212.239.167/config.xml';
+        const flashVars = urlParams.get('vars') || 'editby=Trminhpc';
+        
+        const container = document.getElementById('game-container');
+        container.innerHTML = `
+            <embed id="game-swf"
+                   src="${swfUrl}"
+                   flashvars="${flashVars}"
+                   type="application/x-shockwave-flash"
+                   width="1000"
+                   height="600"
+                   quality="high"
+                   bgcolor="#000000"
+                   allowscriptaccess="always"
+                   allowfullscreen="true"
+                   wmode="direct"
+                   play="true">
+        `;
+        
+        setTimeout(() => {
+            const embed = document.getElementById('game-swf');
+            if (embed) {
+                console.log('Flash embed created');
+                console.log('Type:', embed.type);
+                console.log('Width:', embed.offsetWidth, 'Height:', embed.offsetHeight);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

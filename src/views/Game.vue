@@ -15,12 +15,20 @@
 
     <!-- Game content -->
     <div v-else class="game-wrapper">
-      <div id="flash-container"></div>
+      <webview 
+        id="game-webview"
+        :src="gameUrl"
+        style="width: 1000px; height: 600px; border: 2px solid #4CAF50; background: #000;"
+        allowpopups
+        plugins
+        webpreferences="allowRunningInsecureContent, plugins"
+      ></webview>
     </div>
   </div>
 </template>
 
 <script>
+import { ref } from 'vue'
 import { authApi } from '../api/endpoints'
 
 export default {
@@ -29,7 +37,8 @@ export default {
     return {
       gameData: null,
       isLoading: true,
-      error: null
+      error: null,
+      gameUrl: ''
     }
   },
   async mounted() {
@@ -38,9 +47,16 @@ export default {
       const response = await authApi.loginGame()
       
       if (response.success) {
+        let gameUrl = import.meta.env.VITE_GAME_BASE_URL
+
         this.gameData = response
-        // Load required scripts after getting game data
-        this.loadScripts()
+        const { redirectUrl, autoParam } = response
+        
+        // Load full game page URL instead of just SWF
+        this.gameUrl = `${gameUrl}/index.html?url=${encodeURIComponent(redirectUrl)}&auto=${encodeURIComponent(autoParam)}`
+        this.isLoading = false
+        
+        console.log('Loading game page:', this.gameUrl)
       } else {
         this.error = response.message || 'Không thể đăng nhập vào game'
         this.isLoading = false
@@ -52,104 +68,8 @@ export default {
     }
   },
   methods: {
-    loadScripts() {
-      // Load scripts dynamically
-      const scripts = [
-        '/src/libgn/jquery.js',
-        '/src/libgn/dandantang.js',
-        '/src/libgn/rightClick.js',
-        '/src/libgn/swfobject.js',
-        '/src/libgn/isSafeFlash.js'
-      ]
-
-      this.loadScriptsSequentially(scripts, 0, () => {
-        // Turn off loading before initializing game
-        this.isLoading = false
-        // Wait for DOM update then initialize game
-        this.$nextTick(() => {
-          this.initializeGame()
-        })
-      })
-    },
-    loadScriptsSequentially(scripts, index, callback) {
-      if (index >= scripts.length) {
-        callback()
-        return
-      }
-
-      const script = document.createElement('script')
-      script.type = 'text/javascript'
-      script.src = scripts[index]
-      script.onload = () => {
-        this.loadScriptsSequentially(scripts, index + 1, callback)
-      }
-      script.onerror = () => {
-        console.error(`Failed to load script: ${scripts[index]}`)
-        this.loadScriptsSequentially(scripts, index + 1, callback)
-      }
-      document.head.appendChild(script)
-    },
-    initializeGame() {
-      if (!this.gameData || !this.gameData.redirectUrl) {
-        console.error('Game data not available')
-        return
-      }
-
-      // Use $nextTick to ensure DOM is ready
-      this.$nextTick(() => {
-        // Get redirectUrl and autoParam from API response
-        const { redirectUrl, autoParam } = this.gameData
-
-        // Create Flash object
-        const flashContainer = document.getElementById('flash-container')
-        
-        if (!flashContainer) {
-          console.error('Flash container not found in DOM')
-          return
-        }
-        
-        const flashHTML = `
-          <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" 
-                  id="7road-ddt-game"
-                  codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0"
-                  name="Main" 
-                  width="1000" 
-                  height="600" 
-                  align="middle">
-            <param name="allowScriptAccess" value="always" />
-            <param name="movie" value="${redirectUrl}" />
-            <param name="quality" value="high" />
-            <param name="menu" value="false" />
-            <param name="bgcolor" value="#000000" />
-            <param name="FlashVars" value="${autoParam}" />
-            <param name="wmode" value="direct" />
-            <embed flashvars="${autoParam}" 
-                   src="${redirectUrl}"
-                   width="1000" 
-                   height="600" 
-                   align="middle" 
-                   quality="high" 
-                   name="Main" 
-                   allowscriptaccess="always"
-                   wmode="direct"
-                   type="application/x-shockwave-flash" 
-                   pluginspage="http://www.macromedia.com/go/getflashplayer" />
-          </object>
-        `
-        
-        flashContainer.innerHTML = flashHTML
-        
-        console.log('Flash initialized with URL:', redirectUrl)
-        console.log('Flash params:', autoParam)
-      })
-    }
   },
   beforeUnmount() {
-    // Clean up Flash object when leaving the view
-    const flashContainer = document.getElementById('flash-container')
-    if (flashContainer) {
-      flashContainer.innerHTML = ''
-    }
   }
 }
 </script>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flash Test</title>
+</head>
+<body style="background: #000; color: #fff; text-align: center; padding: 50px;">
+    <h1>Flash Plugin Test</h1>
+    <div id="flash-test"></div>
+    
+    <script>
+        console.log('Testing Flash plugin...');
+        console.log('Plugins:', navigator.plugins.length);
+        
+        const hasFlash = Array.from(navigator.plugins).some(p => 
+            p.name.toLowerCase().includes('flash') || 
+            p.name.toLowerCase().includes('shockwave')
+        );
+        
+        if (hasFlash) {
+            console.log('✅ Flash detected! Creating test embed...');
+            
+            // Simple Flash test with a basic SWF
+            document.getElementById('flash-test').innerHTML = `
+                <embed src="http://www.adobe.com/products/flashplayer/include/marquee/design.swf"
+                       type="application/x-shockwave-flash"
+                       width="400"
+                       height="300"
+                       quality="high"
+                       allowscriptaccess="always">
+            `;
+        } else {
+            console.error('❌ Flash NOT detected!');
+            document.getElementById('flash-test').innerHTML = '<p style="color: red;">Flash plugin not found!</p>';
+        }
+    </script>
+</body>
+</html>

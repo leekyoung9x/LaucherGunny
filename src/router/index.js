@@ -4,6 +4,8 @@ import About from '../views/About.vue'
 import Login from '../views/Login.vue'
 import ElectronApiDemo from '../views/ElectronApiDemo.vue'
 import Game from '../views/Game.vue'
+import FlashTest from '../views/FlashTest.vue'
+import WebViewTest from '../views/WebViewTest.vue'
 
 const routes = [
   {
@@ -33,6 +35,18 @@ const routes = [
     path: '/game',
     name: 'Game',
     component: Game,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/test-flash',
+    name: 'FlashTest',
+    component: FlashTest,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/webview-test',
+    name: 'WebViewTest',
+    component: WebViewTest,
     meta: { requiresAuth: true }
   }
 ]

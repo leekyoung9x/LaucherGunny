@@ -21,10 +21,15 @@ let mainWindow = null
 let isLoggingOut = false
 
 //region enable flash
+console.log('=== FLASH PLUGIN DEBUG ===');
+console.log('Platform:', process.platform);
+console.log('Electron version:', process.versions.electron);
+console.log('Chrome version:', process.versions.chrome);
+
 let pluginName = null; //put the right flash plugin in depending on the operating system.
 switch (process.platform) {
   case 'win32':
-      pluginName = 'pepflashplayer.dll';
+      pluginName = 'pepflashplayer64_34_0_0_330.dll';
     break
   case 'linux':
       pluginName = 'libpepflashplayer.so';
@@ -34,21 +39,41 @@ switch (process.platform) {
     pluginName = 'PepperFlashPlayer.plugin'
     break;
 }
+
+console.log('Flash plugin name:', pluginName);
+
+// Critical Flash switches - MUST be set before app.ready
+const flashPath = path.join(__dirname.includes(".asar") ? process.resourcesPath : __dirname, "flashver/" + pluginName);
+console.log('Flash plugin path:', flashPath);
+console.log('Flash plugin exists:', require('fs').existsSync(flashPath));
+
+// Flash plugin switches
+app.commandLine.appendSwitch('ppapi-flash-path', flashPath);
+app.commandLine.appendSwitch('ppapi-flash-version', '32.0.0.465');
+
+// Enable plugins globally - CRITICAL FLAGS
+app.commandLine.appendSwitch('enable-plugins');
+app.commandLine.appendSwitch('allow-outdated-plugins');
+app.commandLine.appendSwitch('always-authorize-plugins');
+app.commandLine.appendSwitch('disable-features', 'FlashDeprecationWarning');
+
+// Renderer settings
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 if (process.platform !== "darwin") {
   app.commandLine.appendSwitch('high-dpi-support', "1");
-  //app.commandLine.appendSwitch('force-device-scale-factor', "1");
-  app.commandLine.appendSwitch("--enable-npapi");
 }
-//
-// app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname, 'flashver/' + pluginName));
-console.log(path.join(__dirname.includes(".asar") ? process.resourcesPath : __dirname, "flashver/" + pluginName));
-app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname.includes(".asar") ? process.resourcesPath : __dirname, "flashver/" + pluginName));
+
+// Security and isolation
 app.commandLine.appendSwitch('disable-site-isolation-trials');
-app.commandLine.appendSwitch('no-sandbox');
+// Removed no-sandbox to prevent renderer crash
+// app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-web-security');
 app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
 app.commandLine.appendSwitch('allow-insecure-localhost', 'true');
-app.commandLine.appendSwitch('incognito');
+// Cho phép chạy nội dung không an toàn từ Flash
+app.commandLine.appendSwitch('allow-running-insecure-content');
+
+console.log('✅ All Flash command line switches applied');
 //endregion
 
 function createLoginWindow() {
@@ -61,12 +86,15 @@ function createLoginWindow() {
     height: 500,
     resizable: false,
     frame: true,
+    show: false,
     autoHideMenuBar: true,
     icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, '../electron/preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      plugins: true,
+      webSecurity: false
     }
   })
 
@@ -77,6 +105,20 @@ function createLoginWindow() {
       hash: 'login'
     })
   }
+
+  // Show window when ready
+  loginWindow.once('ready-to-show', () => {
+    loginWindow.show()
+  })
+
+  // Enable Flash plugin
+  loginWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'plugins') {
+      callback(true)
+    } else {
+      callback(false)
+    }
+  })
 
   // Set Content Security Policy
   loginWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
@@ -103,6 +145,7 @@ function createMainWindow() {
     : path.join(__dirname, '../build/icon.ico')
   
   mainWindow = new BrowserWindow({
+    sandbox: false,
     width: 1200,
     height: 800,
     show: false,
@@ -111,7 +154,8 @@ function createMainWindow() {
     webPreferences: {
       preload: path.join(__dirname, '../electron/preload.js'),
       contextIsolation: true,
-      nodeIntegration: false,
+      nodeIntegration: true,
+      webviewTag: true,
       plugins: true,
       webSecurity: false
     }
@@ -124,12 +168,106 @@ function createMainWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
-  // Set Content Security Policy
+  // CRITICAL: Allow Flash to run without user interaction
+  mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission) => {
+    if (permission === 'plugins') {
+      return true;
+    }
+    return false;
+  })
+
+  // Enable Flash plugin
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    console.log('\n=== PERMISSION REQUEST ===');
+    console.log('Permission:', permission);
+    if (permission === 'plugins') {
+      console.log('✅ Plugins permission GRANTED');
+      callback(true)
+    } else {
+      console.log('❌ Permission DENIED:', permission);
+      callback(false)
+    }
+  })
+
+  // Log when plugin is ready
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('\n=== PAGE LOADED ===');
+    
+    // Enable plugins for this specific page
+    mainWindow.webContents.session.setPreloads([]);
+    
+    mainWindow.webContents.executeJavaScript(`
+      console.log('Checking navigator.plugins...');
+      console.log('Total plugins:', navigator.plugins.length);
+      for (let i = 0; i < navigator.plugins.length; i++) {
+        console.log('Plugin ' + i + ':', navigator.plugins[i].name, '-', navigator.plugins[i].description);
+      }
+      
+      // Check if Flash is available
+      const hasFlash = Array.from(navigator.plugins).some(p => 
+        p.name.toLowerCase().includes('flash') || 
+        p.name.toLowerCase().includes('shockwave')
+      );
+      console.log('Flash detected:', hasFlash);
+      
+      if (!hasFlash) {
+        console.error('⚠️ Flash plugin NOT found in navigator.plugins');
+        console.log('Available mimeTypes:');
+        for (let i = 0; i < navigator.mimeTypes.length; i++) {
+          console.log('  -', navigator.mimeTypes[i].type, ':', navigator.mimeTypes[i].description);
+        }
+      }
+    `).catch(err => console.log('Error checking plugins:', err));
+  })
+  
+  // Log plugin crashes or errors
+  mainWindow.webContents.on('plugin-crashed', (event, name, version) => {
+    console.error('❌ PLUGIN CRASHED:', name, version);
+  })
+  
+  // Log when renderer process crashes
+  mainWindow.webContents.on('render-process-gone', (event, details) => {
+    console.error('❌ RENDERER PROCESS GONE:', details);
+  })
+  
+  // Monitor console messages from renderer
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    if (message.includes('Flash') || message.includes('plugin')) {
+      console.log(`[Renderer ${level}]:`, message);
+    }
+  })
+
+  // Configure WebView to allow scripts and plugins
+  mainWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    console.log('WebView attaching with URL:', params.src);
+    
+    // Remove sandbox to allow scripts
+    delete webPreferences.preload
+    
+    // Enable required features for Flash
+    webPreferences.plugins = true
+    webPreferences.webSecurity = false
+    webPreferences.allowRunningInsecureContent = true
+    webPreferences.experimentalFeatures = true
+    webPreferences.nodeIntegration = false
+    webPreferences.contextIsolation = true
+    
+    console.log('✅ WebView preferences configured for Flash');
+  })
+
+  // Set Content Security Policy - Allow everything for Flash
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: data: blob:"]
+        'Content-Security-Policy': [
+          "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+          "script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+          "frame-src * data: blob:; " +
+          "child-src * data: blob:; " +
+          "object-src *; " +
+          "connect-src *"
+        ]
       }
     })
   })
@@ -260,6 +398,15 @@ ipcMain.on('show-main-window', () => {
 })
 
 app.whenReady().then(() => {
+  // Log all available plugins
+  console.log('\n=== PLUGINS LOADED ===');
+  const plugins = app.getAppMetrics();
+  console.log('App metrics:', plugins);
+  
+  // Check if Flash is in the plugins list
+  console.log('\nChecking for Flash plugin...');
+  console.log('Plugin name to search:', pluginName);
+  
   // Always start with login window, let the renderer decide
   createLoginWindow()
 
