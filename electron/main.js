@@ -36,7 +36,7 @@ switch (process.platform) {
       app.commandLine.appendSwitch('no-sandbox');
     break;
   case 'darwin':
-    pluginName = 'flash.plugin'
+    pluginName = 'FlashPlayer-10.6.plugin'
     break;
 }
 
