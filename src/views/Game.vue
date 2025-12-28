@@ -18,7 +18,7 @@
       <webview 
         id="game-webview"
         :src="gameUrl"
-        style="width: 1000px; height: 600px; border: 2px solid #4CAF50; background: #000;"
+        style="width: 1000px; height: 600px; border: none; background: #000;"
         allowpopups
         plugins
         webpreferences="allowRunningInsecureContent, plugins"
