@@ -164,6 +164,7 @@ function createMainWindow() {
     sandbox: false,
     width: 1015,
     height: 705,
+    resizable: false,
     show: false,
     autoHideMenuBar: true,
     icon: iconPath,
