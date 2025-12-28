@@ -58,7 +58,18 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "flashver/**/*"
+    ],
+    "asarUnpack": [
+      "flashver/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "build",
+        "to": "build",
+        "filter": ["**/*"]
+      }
     ],
     "mac": {
       "category": "public.app-category.utilities",

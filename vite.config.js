@@ -18,7 +18,7 @@ export default defineConfig({
       {
         entry: 'electron/main.js',
         onstart(options) {
-          // Copy flashver folder to dist-electron
+          // Copy flashver folder to dist-electron (for dev)
           fs.copySync('flashver', 'dist-electron/flashver', { overwrite: true })
           options.startup()
         },
@@ -26,6 +26,7 @@ export default defineConfig({
           build: {
             sourcemap: true,
             minify: false,
+            outDir: 'dist-electron',
             rollupOptions: {
               external: ['electron']
             }

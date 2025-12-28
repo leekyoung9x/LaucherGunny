@@ -43,7 +43,17 @@ switch (process.platform) {
 console.log('Flash plugin name:', pluginName);
 
 // Critical Flash switches - MUST be set before app.ready
-const flashPath = path.join(__dirname.includes(".asar") ? process.resourcesPath : __dirname, "flashver/" + pluginName);
+// In production build, flashver is unpacked to app.asar.unpacked/flashver
+// In dev, it's in the project root
+let flashPath;
+if (__dirname.includes(".asar")) {
+  // Production: flashver is unpacked next to app.asar
+  flashPath = path.join(process.resourcesPath, "app.asar.unpacked", "flashver", pluginName);
+} else {
+  // Development: flashver is in project root
+  flashPath = path.join(__dirname, "flashver", pluginName);
+}
+
 console.log('Flash plugin path:', flashPath);
 console.log('Flash plugin exists:', require('fs').existsSync(flashPath));
 
@@ -77,9 +87,11 @@ console.log('✅ All Flash command line switches applied');
 //endregion
 
 function createLoginWindow() {
-  const iconPath = process.env.VITE_DEV_SERVER_URL 
-    ? path.join(__dirname, '../build/icon.ico')
-    : path.join(__dirname, '../build/icon.ico')
+  // In production, build folder is in resources/build
+  // In dev, it's relative to electron folder
+  const iconPath = __dirname.includes('.asar')
+    ? path.join(process.resourcesPath, 'build', 'icon.ico')
+    : path.join(__dirname, '..', 'build', 'icon.ico')
   
   loginWindow = new BrowserWindow({
     width: 400,
@@ -90,7 +102,7 @@ function createLoginWindow() {
     autoHideMenuBar: true,
     icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, '../electron/preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       plugins: true,
@@ -101,7 +113,9 @@ function createLoginWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     loginWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/login')
   } else {
-    loginWindow.loadFile(path.join(__dirname, '../dist/index.html'), {
+    // In production, dist-electron and dist are siblings in app.asar
+    const distPath = path.join(__dirname, '..', 'dist', 'index.html')
+    loginWindow.loadFile(distPath, {
       hash: 'login'
     })
   }
@@ -140,9 +154,11 @@ function createLoginWindow() {
 }
 
 function createMainWindow() {
-  const iconPath = process.env.VITE_DEV_SERVER_URL 
-    ? path.join(__dirname, '../build/icon.ico')
-    : path.join(__dirname, '../build/icon.ico')
+  // In production, build folder is in resources/build
+  // In dev, it's relative to electron folder
+  const iconPath = __dirname.includes('.asar')
+    ? path.join(process.resourcesPath, 'build', 'icon.ico')
+    : path.join(__dirname, '..', 'build', 'icon.ico')
   
   mainWindow = new BrowserWindow({
     sandbox: false,
@@ -152,7 +168,7 @@ function createMainWindow() {
     autoHideMenuBar: true,
     icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, '../electron/preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: true,
       webviewTag: true,
@@ -165,7 +181,9 @@ function createMainWindow() {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
     // mainWindow.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+    // In production, dist-electron and dist are siblings in app.asar
+    const distPath = path.join(__dirname, '..', 'dist', 'index.html')
+    mainWindow.loadFile(distPath)
   }
 
   // CRITICAL: Allow Flash to run without user interaction
