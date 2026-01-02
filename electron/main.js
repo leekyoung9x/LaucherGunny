@@ -87,6 +87,12 @@ console.log('✅ All Flash command line switches applied');
 //endregion
 
 function createLoginWindow() {
+  // If login window already exists, just show it
+  if (loginWindow) {
+    loginWindow.show()
+    return
+  }
+  
   // In production, build folder is in resources/build
   // In dev, it's relative to electron folder
   const iconPath = __dirname.includes('.asar')
@@ -312,15 +318,15 @@ ipcMain.on('login-success', () => {
 ipcMain.on('logout', () => {
   isLoggingOut = true
   
+  // Create login window first to prevent app from quitting
+  createLoginWindow()
+  
+  // Then close main window after a short delay
   setTimeout(() => {
     if (mainWindow) {
       mainWindow.close()
+      mainWindow = null
     }
-  }, 200)
-  
-  // Wait a bit for main window to close, then create login window
-  setTimeout(() => {
-    createLoginWindow()
     isLoggingOut = false
   }, 100)
 })

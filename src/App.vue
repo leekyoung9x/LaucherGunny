@@ -9,7 +9,7 @@
       <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <router-link to="/" class="flex items-center space-x-3">
           <span class="self-center text-2xl font-semibold whitespace-nowrap">
-            Gunny Version 5.5
+            DDTank Legend
           </span>
         </router-link>
         <button 
@@ -33,7 +33,7 @@
                 Home
               </router-link>
             </li>
-            <li>
+            <!-- <li>
               <router-link 
                 to="/about" 
                 class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
@@ -50,17 +50,17 @@
               >
                 API Demo
               </router-link>
-            </li>
+            </li> -->
             <li>
               <router-link 
                 to="/game" 
                 class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
                 active-class="text-primary"
               >
-                Chơi Game
+                Play Game
               </router-link>
             </li>
-            <li>
+            <!-- <li>
               <router-link 
                 to="/webview-test" 
                 class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
@@ -68,7 +68,7 @@
               >
                 Flash Test
               </router-link>
-            </li>
+            </li> -->
             <li>
               <button 
                 @click="handleLogout"
@@ -112,14 +112,15 @@ export default {
     
     const isLoginPage = computed(() => route.path === '/login')
     
-    const handleLogout = () => {
-      authStore.logout()
+    const handleLogout = async () => {
+      await authStore.logout()
       
-      // Notify Electron to show login window
+      // Navigate to login page
+      router.push('/login')
+      
+      // Notify Electron to show login window (if in Electron)
       if (window.electronAPI) {
         window.electronAPI.logout()
-      } else {
-        router.push('/login')
       }
     }
     
