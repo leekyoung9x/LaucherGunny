@@ -33,6 +33,11 @@ export const authApi = {
     })
   },
   
+  // Get current user info
+  getUserMe() {
+    return api.get('/Users/me')
+  },
+  
   // Register
   register(userData) {
     return api.post('/auth/register', userData)
@@ -51,6 +56,11 @@ export const authApi = {
   // Login game
   loginGame() {
     return api.get('/Users/login-game')
+  },
+  
+  // Transfer money from web to game
+  transferMoney(data) {
+    return api.post('/Users/transfer-money', data)
   }
 }
 

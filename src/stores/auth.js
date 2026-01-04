@@ -12,7 +12,10 @@ export const useAuthStore = defineStore('auth', {
   
   getters: {
     currentUser: (state) => state.user,
-    isLoggedIn: (state) => state.isAuthenticated
+    isLoggedIn: (state) => state.isAuthenticated,
+    userMoney: (state) => state.user?.money || 0,
+    userFullName: (state) => state.user?.fullName || '',
+    userName: (state) => state.user?.username || ''
   },
   
   actions: {
@@ -78,13 +81,37 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     
+    // Fetch user information
+    async fetchUserInfo() {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await authApi.getUserMe()
+        this.user = response
+        return response
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch user info'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+    
     // Check if user is already logged in
-    checkAuth() {
+    async checkAuth() {
       const token = localStorage.getItem('token')
       if (token) {
         this.token = token
         this.isAuthenticated = true
-        // Optionally fetch user data here
+        // Fetch user data
+        try {
+          await this.fetchUserInfo()
+        } catch (error) {
+          console.error('Failed to fetch user info:', error)
+          // If token is invalid, logout
+          this.logout()
+        }
       }
     }
   }

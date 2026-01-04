@@ -96,10 +96,6 @@ export default {
         // Kiểm tra response success
         if (response.success) {
           // Lưu thông tin auth
-          authStore.user = { 
-            userName: credentials.value.userName,
-            userId: response.userId
-          }
           authStore.isAuthenticated = true
           authStore.token = response.token
           authStore.refreshToken = response.refreshToken
@@ -108,6 +104,13 @@ export default {
           localStorage.setItem('token', response.token)
           localStorage.setItem('refreshToken', response.refreshToken)
           localStorage.setItem('userId', response.userId)
+
+          // Lấy thông tin người dùng
+          try {
+            await authStore.fetchUserInfo()
+          } catch (err) {
+            console.error('Failed to fetch user info:', err)
+          }
 
           // Hiển thị thông báo thành công
           toast.success(response.message || 'Đăng nhập thành công!')

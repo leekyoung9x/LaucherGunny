@@ -5,8 +5,8 @@
   
   <div v-else class="min-h-screen">
     <!-- Navbar -->
-    <nav class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+    <nav class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-16 flex items-center">
+      <div class="max-w-screen-xl flex items-center justify-between mx-auto px-4 w-full">
         <router-link to="/" class="flex items-center space-x-3">
           <span class="self-center text-2xl font-semibold whitespace-nowrap">
             DDTank Legend
@@ -23,61 +23,32 @@
           </svg>
         </button>
         <div class="hidden w-full md:block md:w-auto" id="navbar-default">
-          <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border rounded-lg md:flex-row md:space-x-8 md:mt-0 md:border-0">
-            <li>
-              <router-link 
-                to="/" 
-                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
-                active-class="text-primary"
-              >
-                Home
-              </router-link>
-            </li>
-            <!-- <li>
-              <router-link 
-                to="/about" 
-                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
-                active-class="text-primary"
-              >
-                About
-              </router-link>
-            </li>
-            <li>
-              <router-link 
-                to="/electron-api" 
-                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
-                active-class="text-primary"
-              >
-                API Demo
-              </router-link>
-            </li> -->
-            <li>
-              <router-link 
-                to="/game" 
-                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
-                active-class="text-primary"
-              >
-                Play Game
-              </router-link>
-            </li>
-            <!-- <li>
-              <router-link 
-                to="/webview-test" 
-                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
-                active-class="text-primary"
-              >
-                Flash Test
-              </router-link>
-            </li> -->
-            <li>
-              <button 
-                @click="handleLogout"
-                class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0 text-destructive"
-              >
-                Logout
-              </button>
-            </li>
-          </ul>
+          <div class="flex items-center gap-6">
+            <!-- Navigation Menu -->
+            <ul class="font-medium flex flex-row md:space-x-8">
+              <li>
+                <router-link 
+                  to="/" 
+                  class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
+                  active-class="text-primary"
+                >
+                  Home
+                </router-link>
+              </li>
+              <li>
+                <router-link 
+                  to="/game" 
+                  class="block py-2 px-3 rounded hover:bg-accent md:hover:bg-transparent md:border-0 md:p-0"
+                  active-class="text-primary"
+                >
+                  Play Game
+                </router-link>
+              </li>
+            </ul>
+            
+            <!-- User Menu with Balance and Avatar -->
+            <UserMenu />
+          </div>
         </div>
       </div>
     </nav>
@@ -91,42 +62,41 @@
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import UserMenu from '@/components/UserMenu.vue'
 
 export default {
   name: 'App',
+  components: {
+    UserMenu
+  },
   setup() {
     const route = useRoute()
     const router = useRouter()
     const authStore = useAuthStore()
 
     // Check if already logged in on mount
-    onMounted(() => {
+    onMounted(async () => {
       const token = localStorage.getItem('token')
       if (token && window.electronAPI) {
         // User is already logged in, switch to main window
         authStore.isAuthenticated = true
         authStore.token = token
+        
+        // Fetch user info
+        try {
+          await authStore.fetchUserInfo()
+        } catch (error) {
+          console.error('Failed to fetch user info:', error)
+        }
+        
         window.electronAPI.showMainWindow()
       }
     })
     
     const isLoginPage = computed(() => route.path === '/login')
     
-    const handleLogout = async () => {
-      await authStore.logout()
-      
-      // Navigate to login page
-      router.push('/login')
-      
-      // Notify Electron to show login window (if in Electron)
-      if (window.electronAPI) {
-        window.electronAPI.logout()
-      }
-    }
-    
     return {
-      isLoginPage,
-      handleLogout
+      isLoginPage
     }
   }
 }
