@@ -46,6 +46,9 @@
               </li>
             </ul>
             
+            <!-- Language Switcher -->
+            <LanguageSwitcher />
+            
             <!-- User Menu with Balance and Avatar -->
             <UserMenu />
           </div>
@@ -63,11 +66,13 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import UserMenu from '@/components/UserMenu.vue'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'App',
   components: {
-    UserMenu
+    UserMenu,
+    LanguageSwitcher
   },
   setup() {
     const route = useRoute()

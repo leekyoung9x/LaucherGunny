@@ -26,11 +26,11 @@
       <!-- Balance with Refresh -->
       <div class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
         <Wallet class="mr-2 h-4 w-4" />
-        <span class="flex-1">Số dư: {{ formattedMoney }}</span>
+        <span class="flex-1">{{ t('user.balance') }}: {{ formattedMoney }}</span>
         <button 
           @click.stop="handleRefreshBalance"
           class="hover:bg-accent-foreground/10 rounded p-1 transition-colors"
-          title="Làm mới số dư"
+          :title="t('user.refreshBalance')"
         >
           <RefreshCw :class="['h-4 w-4 text-muted-foreground', { 'animate-spin': refreshing }]" />
         </button>
@@ -39,7 +39,7 @@
       <!-- Transfer Money -->
       <DropdownMenuItem @click="openTransferDialog" class="cursor-pointer">
         <ArrowLeftRight class="mr-2 h-4 w-4" />
-        <span>Chuyển tiền vào game</span>
+        <span>{{ t('transfer.title') }}</span>
       </DropdownMenuItem>
       
       <DropdownMenuSeparator />
@@ -47,12 +47,12 @@
       <!-- Account Settings -->
       <DropdownMenuItem class="cursor-pointer">
         <User class="mr-2 h-4 w-4" />
-        <span>Thông tin tài khoản</span>
+        <span>{{ t('user.profile') }}</span>
       </DropdownMenuItem>
       
       <DropdownMenuItem class="cursor-pointer">
         <Settings class="mr-2 h-4 w-4" />
-        <span>Cài đặt</span>
+        <span>{{ t('user.settings') }}</span>
       </DropdownMenuItem>
       
       <DropdownMenuSeparator />
@@ -60,7 +60,7 @@
       <!-- Logout -->
       <DropdownMenuItem @click="handleLogout" class="cursor-pointer text-destructive focus:text-destructive">
         <LogOut class="mr-2 h-4 w-4" />
-        <span>Đăng xuất</span>
+        <span>{{ t('auth.logout') }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
 
@@ -68,29 +68,29 @@
     <Dialog v-model:open="isDialogOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Chuyển tiền vào game</DialogTitle>
+          <DialogTitle>{{ t('transfer.title') }}</DialogTitle>
           <DialogDescription>
-            Chuyển tiền từ web vào game để sử dụng trong trò chơi
+            {{ t('transfer.description') }}
           </DialogDescription>
         </DialogHeader>
         
         <div class="space-y-4 py-4">
           <!-- Current Balance -->
           <div class="flex items-center justify-between p-3 rounded-lg bg-muted">
-            <span class="text-sm text-muted-foreground">Số dư hiện tại:</span>
+            <span class="text-sm text-muted-foreground">{{ t('user.currentBalance') }}:</span>
             <span class="font-semibold">{{ formattedMoney }}</span>
           </div>
           
           <!-- Transfer Amount Input -->
           <div class="space-y-2">
-            <label for="amount" class="text-sm font-medium">Số tiền muốn chuyển:</label>
+            <label for="amount" class="text-sm font-medium">{{ t('transfer.amount') }}:</label>
             <input
               id="amount"
               v-model.number="transferAmount"
               type="number"
               min="0"
               :max="userMoney"
-              placeholder="Nhập số tiền"
+              :placeholder="t('transfer.enterAmount')"
               class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -110,7 +110,7 @@
           
           <!-- Warning -->
           <div v-if="transferAmount > userMoney" class="text-sm text-destructive">
-            Số tiền chuyển không được vượt quá số dư hiện tại
+            {{ t('transfer.amountExceedsBalance') }}
           </div>
         </div>
         
@@ -121,7 +121,7 @@
             class="w-full"
           >
             <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-            {{ loading ? 'Đang xử lý...' : 'Xác nhận chuyển tiền' }}
+            {{ loading ? t('common.processing') : t('transfer.confirmTransfer') }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -132,14 +132,14 @@
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle :class="resultData.success ? 'text-green-600' : 'text-red-600'">
-            {{ resultData.success ? '✅ Chuyển tiền thành công!' : '❌ Chuyển tiền thất bại' }}
+            {{ resultData.success ? `✅ ${t('transfer.transferSuccess')}` : `❌ ${t('transfer.transferFailed')}` }}
           </DialogTitle>
         </DialogHeader>
         
         <div class="space-y-4 py-4">
           <div v-if="resultData.success" class="space-y-3">
             <div class="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-200">
-              <span class="text-sm font-medium text-green-800">Số dư còn lại:</span>
+              <span class="text-sm font-medium text-green-800">{{ t('transfer.remainingBalance') }}:</span>
               <span class="font-bold text-green-600">{{ formatMoney(resultData.remainingMemberMoney) }}</span>
             </div>
           </div>
@@ -150,7 +150,7 @@
         
         <DialogFooter>
           <Button @click="isResultDialogOpen = false" class="w-full">
-            Đóng
+            {{ t('common.close') }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -161,6 +161,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api/endpoints'
 import { toast } from 'vue-sonner'
@@ -191,6 +192,7 @@ import Avatar from '@/components/ui/Avatar.vue'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 import AvatarFallback from '@/components/ui/AvatarFallback.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
