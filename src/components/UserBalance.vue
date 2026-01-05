@@ -80,6 +80,35 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Result Dialog -->
+    <Dialog v-model:open="isResultDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle :class="resultData.success ? 'text-green-600' : 'text-red-600'">
+            {{ resultData.success ? '✅ Chuyển tiền thành công!' : '❌ Chuyển tiền thất bại' }}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div class="space-y-4 py-4">
+          <div v-if="resultData.success" class="space-y-3">
+            <div class="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-200">
+              <span class="text-sm font-medium text-green-800">Số dư còn lại:</span>
+              <span class="font-bold text-green-600">{{ formatMoney(resultData.remainingMemberMoney) }}</span>
+            </div>
+          </div>
+          <div v-else class="p-4 rounded-lg bg-red-50 border border-red-200">
+            <p class="text-sm text-red-800">{{ resultData.message }}</p>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button @click="isResultDialogOpen = false" class="w-full">
+            Đóng
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -100,8 +129,15 @@ import DialogTitle from '@/components/ui/DialogTitle.vue'
 const authStore = useAuthStore()
 
 const isDialogOpen = ref(false)
+const isResultDialogOpen = ref(false)
 const transferAmount = ref(0)
 const loading = ref(false)
+const resultData = ref({
+  success: false,
+  message: '',
+  remainingMemberMoney: 0,
+  tankMoney: 0
+})
 
 const userMoney = computed(() => authStore.userMoney)
 const formattedMoney = computed(() => formatMoney(userMoney.value))
@@ -127,18 +163,39 @@ const handleTransfer = async () => {
 
   try {
     // Call API to transfer money
-    await authApi.transferMoney({ amount: transferAmount.value })
+    const data = await authApi.transferMoney({ amount: transferAmount.value })
     
-    // Refresh user info after transfer
-    await authStore.fetchUserInfo()
+    // Store result data
+    resultData.value = {
+      success: data.success,
+      message: data.message || '',
+      remainingMemberMoney: data.remainingMemberMoney || 0,
+      tankMoney: data.tankMoney || 0
+    }
     
-    toast.success(`Đã chuyển ${formatMoney(transferAmount.value)} vào game thành công!`)
+    // Close transfer dialog and show result dialog
     isDialogOpen.value = false
     transferAmount.value = 0
+    isResultDialogOpen.value = true
+    
+    // Refresh user info if success
+    if (data.success) {
+      await authStore.fetchUserInfo()
+    }
   } catch (error) {
     console.error('Transfer error:', error)
     const errorMessage = error.response?.data?.message || 'Chuyển tiền thất bại. Vui lòng thử lại.'
-    toast.error(errorMessage)
+    
+    // Show error in result dialog
+    resultData.value = {
+      success: false,
+      message: errorMessage,
+      remainingMemberMoney: 0,
+      tankMoney: 0
+    }
+    
+    isDialogOpen.value = false
+    isResultDialogOpen.value = true
   } finally {
     loading.value = false
   }

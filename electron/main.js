@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron')
 const path = require('path')
 const axios = require('axios')
 const https = require('https')
@@ -422,6 +422,35 @@ ipcMain.on('show-main-window', () => {
   }
 })
 
+// Clear cache handler
+ipcMain.handle('clear-cache', async () => {
+  try {
+    const { session } = require('electron')
+    
+    // Clear cache của tất cả sessions
+    await session.defaultSession.clearCache()
+    await session.defaultSession.clearStorageData({
+      storages: [
+        'appcache',
+        'cookies', 
+        'filesystem',
+        'indexdb',
+        'localstorage',
+        'shadercache',
+        'websql',
+        'serviceworkers',
+        'cachestorage'
+      ]
+    })
+    
+    console.log('✅ Cache cleared successfully')
+    return { success: true, message: 'Cache đã được xóa thành công!' }
+  } catch (error) {
+    console.error('❌ Error clearing cache:', error)
+    return { success: false, error: error.message }
+  }
+})
+
 app.whenReady().then(() => {
   // Log all available plugins
   console.log('\n=== PLUGINS LOADED ===');
@@ -431,8 +460,107 @@ app.whenReady().then(() => {
   // Check if Flash is in the plugins list
   console.log('\nChecking for Flash plugin...');
   console.log('Plugin name to search:', pluginName);
+    // Create menu
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Clear Cache',
+          accelerator: 'CmdOrCtrl+Shift+Delete',
+          click: async () => {
+            const result = await dialog.showMessageBox({
+              type: 'question',
+              buttons: ['Hủy', 'Xóa Cache'],
+              defaultId: 1,
+              title: 'Xóa Cache',
+              message: 'Bạn có chắc muốn xóa cache?',
+              detail: 'Tất cả dữ liệu cache sẽ bị xóa (ảnh, config, xml...). App sẽ tải lại các file từ server.'
+            })
+            
+            if (result.response === 1) {
+              const { session } = require('electron')
+              try {
+                await session.defaultSession.clearCache()
+                await session.defaultSession.clearStorageData({
+                  storages: [
+                    'appcache',
+                    'cookies',
+                    'filesystem',
+                    'indexdb',
+                    'localstorage',
+                    'shadercache',
+                    'websql',
+                    'serviceworkers',
+                    'cachestorage'
+                  ]
+                })
+                
+                dialog.showMessageBox({
+                  type: 'info',
+                  title: 'Thành công',
+                  message: 'Cache đã được xóa thành công!',
+                  detail: 'Vui lòng khởi động lại ứng dụng để thấy thay đổi.'
+                })
+                
+                console.log('✅ Cache cleared successfully from menu')
+              } catch (error) {
+                console.error('❌ Error clearing cache:', error)
+                dialog.showMessageBox({
+                  type: 'error',
+                  title: 'Lỗi',
+                  message: 'Không thể xóa cache!',
+                  detail: error.message
+                })
+              }
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Exit',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => {
+            app.quit()
+          }
+        }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About',
+          click: () => {
+            dialog.showMessageBox({
+              type: 'info',
+              title: 'About',
+              message: 'Launcher Gunny',
+              detail: 'Version 1.0.0\nElectron + Vue 3 + Vite'
+            })
+          }
+        }
+      ]
+    }
+  ]
   
-  // Always start with login window, let the renderer decide
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
+    // Always start with login window, let the renderer decide
   createLoginWindow()
 
   app.on('activate', () => {

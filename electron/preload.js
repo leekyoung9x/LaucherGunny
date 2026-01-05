@@ -19,5 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // System info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
-  checkLoginStatus: () => ipcRenderer.invoke('check-login-status')
+  checkLoginStatus: () => ipcRenderer.invoke('check-login-status'),
+  
+  // Cache management
+  clearCache: () => ipcRenderer.invoke('clear-cache')
 })
