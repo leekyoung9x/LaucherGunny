@@ -53,6 +53,16 @@ export default {
     transferError: 'Chuyển tiền thất bại. Vui lòng thử lại.',
   },
   
+  deposit: {
+    title: 'Nạp tiền',
+    description: 'Chọn số tiền bạn muốn nạp vào tài khoản',
+    amount: 'Số tiền',
+    enterAmount: 'Nhập số tiền',
+    minAmount: 'Số tiền tối thiểu là 50,000đ',
+    confirmDeposit: 'Xác nhận nạp tiền',
+    payment: 'Thanh toán',
+  },
+  
   menu: {
     home: 'Trang chủ',
     game: 'Chơi game',

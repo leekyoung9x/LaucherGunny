@@ -53,6 +53,16 @@ export default {
     transferError: 'Transfer failed. Please try again.',
   },
   
+  deposit: {
+    title: 'Deposit',
+    description: 'Choose the amount you want to deposit into your account',
+    amount: 'Amount',
+    enterAmount: 'Enter amount',
+    minAmount: 'Minimum amount is 50,000đ',
+    confirmDeposit: 'Confirm Deposit',
+    payment: 'Payment',
+  },
+  
   menu: {
     home: 'Home',
     game: 'Play Game',

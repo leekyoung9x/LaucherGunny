@@ -36,6 +36,12 @@
         </button>
       </div>
       
+      <!-- Deposit Money -->
+      <DropdownMenuItem @click="openDepositDialog" class="cursor-pointer">
+        <CreditCard class="mr-2 h-4 w-4" />
+        <span>{{ t('deposit.title') || 'Nạp tiền' }}</span>
+      </DropdownMenuItem>
+      
       <!-- Transfer Money -->
       <DropdownMenuItem @click="openTransferDialog" class="cursor-pointer">
         <ArrowLeftRight class="mr-2 h-4 w-4" />
@@ -155,6 +161,93 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Deposit Dialog -->
+    <Dialog v-model:open="isDepositDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('deposit.title') || 'Nạp tiền' }}</DialogTitle>
+          <DialogDescription>
+            {{ t('deposit.description') || 'Chọn số tiền bạn muốn nạp vào tài khoản' }}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div class="space-y-4 py-4">
+          <!-- Current Balance -->
+          <div class="flex items-center justify-between p-3 rounded-lg bg-muted">
+            <span class="text-sm text-muted-foreground">{{ t('user.currentBalance') }}:</span>
+            <span class="font-semibold">{{ formattedMoney }}</span>
+          </div>
+          
+          <!-- Deposit Amount Input -->
+          <div class="space-y-2">
+            <label for="depositAmount" class="text-sm font-medium">{{ t('deposit.amount') || 'Số tiền' }}:</label>
+            <input
+              id="depositAmount"
+              v-model.number="depositAmount"
+              type="number"
+              min="0"
+              :placeholder="t('deposit.enterAmount') || 'Nhập số tiền'"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          
+          <!-- Quick Amount Buttons for Deposit -->
+          <div class="grid grid-cols-3 gap-2">
+            <Button 
+              v-for="amount in depositQuickAmounts" 
+              :key="amount"
+              @click="depositAmount = amount"
+              variant="outline"
+              size="sm"
+            >
+              {{ formatMoney(amount) }}đ
+            </Button>
+          </div>
+          
+          <!-- Warning -->
+          <div v-if="depositAmount && depositAmount < 50000" class="text-sm text-destructive">
+            {{ t('deposit.minAmount') || 'Số tiền tối thiểu là 50,000đ' }}
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            @click="handleDeposit" 
+            :disabled="!depositAmount || depositAmount < 50000 || depositLoading"
+            class="w-full"
+          >
+            <Loader2 v-if="depositLoading" class="mr-2 h-4 w-4 animate-spin" />
+            {{ depositLoading ? t('common.processing') : (t('deposit.confirmDeposit') || 'Xác nhận nạp tiền') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Payment Popup (Full Screen) -->
+    <Dialog v-model:open="isPaymentPopupOpen">
+      <DialogContent class="!max-w-none !h-screen !w-screen !p-0 !m-0 !gap-0 !translate-x-[-50%] !translate-y-[-50%] !border-0 !rounded-none [&>button]:hidden">
+        <!-- Custom Close Button -->
+        <div class="absolute top-4 right-4 z-50">
+          <Button 
+            @click="closePaymentPopup" 
+            variant="ghost" 
+            size="sm"
+            class="h-10 w-10 p-0 bg-white/95 hover:bg-white shadow-lg rounded-full font-bold text-lg"
+          >
+            ✕
+          </Button>
+        </div>
+        
+        <!-- Full iframe -->
+        <iframe 
+          v-if="paymentUrl"
+          :src="paymentUrl" 
+          class="w-full h-full border-0"
+          allow="payment"
+        />
+      </DialogContent>
+    </Dialog>
   </DropdownMenu>
 </template>
 
@@ -163,7 +256,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { authApi } from '@/api/endpoints'
+import { authApi, paymentApi } from '@/api/endpoints'
 import { toast } from 'vue-sonner'
 import { 
   Coins, 
@@ -173,7 +266,8 @@ import {
   User,
   Wallet,
   Settings,
-  LogOut
+  LogOut,
+  CreditCard
 } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
@@ -198,10 +292,15 @@ const authStore = useAuthStore()
 
 const isDialogOpen = ref(false)
 const isResultDialogOpen = ref(false)
+const isDepositDialogOpen = ref(false)
+const isPaymentPopupOpen = ref(false)
 const isMenuOpen = ref(false)
 const transferAmount = ref(0)
+const depositAmount = ref(0)
 const loading = ref(false)
+const depositLoading = ref(false)
 const refreshing = ref(false)
+const paymentUrl = ref('')
 const resultData = ref({
   success: false,
   message: '',
@@ -234,6 +333,7 @@ const userInitials = computed(() => {
 })
 
 const quickAmounts = [100, 500, 1000, 5000]
+const depositQuickAmounts = [50000, 100000, 200000, 500000, 1000000, 2000000]
 
 const formatMoney = (amount) => {
   return new Intl.NumberFormat('vi-VN').format(amount)
@@ -315,5 +415,58 @@ const handleLogout = async () => {
   if (window.electronAPI) {
     window.electronAPI.logout()
   }
+}
+
+const openDepositDialog = () => {
+  isDepositDialogOpen.value = true
+  depositAmount.value = 0
+}
+
+const handleDeposit = async () => {
+  if (!depositAmount.value || depositAmount.value < 50000) {
+    toast.error('Số tiền không hợp lệ. Tối thiểu 50,000đ')
+    return
+  }
+
+  depositLoading.value = true
+
+  try {
+    const data = await paymentApi.createCheckoutSession({
+      amount: depositAmount.value,
+      description: `Nạp tiền vào tài khoản #${userName.value}`,
+      productName: 'Money Website',
+      quantity: 1,
+      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe'
+    })
+    
+    // Kiểm tra response
+    if (data.checkoutUrl) {
+      // Đóng deposit dialog
+      isDepositDialogOpen.value = false
+      
+      // Mở payment popup với URL
+      paymentUrl.value = data.checkoutUrl
+      isPaymentPopupOpen.value = true
+      
+      toast.success('Đang chuyển đến trang thanh toán...')
+    } else {
+      toast.error('Không thể tạo phiên thanh toán')
+    }
+  } catch (error) {
+    console.error('Deposit error:', error)
+    const errorMessage = error.response?.data?.message || 'Không thể tạo phiên thanh toán. Vui lòng thử lại.'
+    toast.error(errorMessage)
+  } finally {
+    depositLoading.value = false
+  }
+}
+
+const closePaymentPopup = () => {
+  isPaymentPopupOpen.value = false
+  paymentUrl.value = ''
+  depositAmount.value = 0
+  
+  // Refresh balance sau khi đóng popup
+  handleRefreshBalance()
 }
 </script>

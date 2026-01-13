@@ -91,3 +91,11 @@ export const postsApi = {
     return api.delete(`/posts/${id}`)
   }
 }
+
+// Payment API endpoints
+export const paymentApi = {
+  // Create checkout session
+  createCheckoutSession(data) {
+    return api.post('/payment/create-checkout-session', data)
+  }
+}
