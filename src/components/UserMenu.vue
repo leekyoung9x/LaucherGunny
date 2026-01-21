@@ -50,6 +50,29 @@
       
       <DropdownMenuSeparator />
       
+      <!-- Language Selection -->
+      <div class="px-2 py-1.5">
+        <p class="text-xs font-semibold text-muted-foreground mb-1.5">{{ t('user.language') }}</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            v-for="lang in languages"
+            :key="lang.code"
+            @click="changeLanguage(lang.code)"
+            :class="[
+              'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+              currentLocale === lang.code 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary hover:bg-secondary/80'
+            ]"
+          >
+            <span class="text-base">{{ lang.flag }}</span>
+            <span class="text-xs font-medium">{{ lang.label }}</span>
+          </button>
+        </div>
+      </div>
+      
+      <DropdownMenuSeparator />
+      
       <!-- Account Settings -->
       <DropdownMenuItem class="cursor-pointer">
         <User class="mr-2 h-4 w-4" />
@@ -286,9 +309,22 @@ import Avatar from '@/components/ui/Avatar.vue'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 import AvatarFallback from '@/components/ui/AvatarFallback.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Language settings
+const languages = [
+  { code: 'vi', label: 'VN', flag: '🇻🇳', name: 'Tiếng Việt' },
+  { code: 'en', label: 'EN', flag: '🇺🇸', name: 'English' },
+]
+
+const currentLocale = computed(() => locale.value)
+
+const changeLanguage = (lang) => {
+  locale.value = lang
+  localStorage.setItem('locale', lang)
+}
 
 const isDialogOpen = ref(false)
 const isResultDialogOpen = ref(false)

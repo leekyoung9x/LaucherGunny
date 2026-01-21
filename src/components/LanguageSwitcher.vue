@@ -1,28 +1,29 @@
 <template>
-  <DropdownMenu>
-    <DropdownMenuTrigger as-child>
-      <button class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors outline-none cursor-pointer">
-        <Globe class="w-4 h-4" />
-        <span>{{ currentLanguage.flag }}</span>
-        <ChevronDown class="w-3 h-3" />
-      </button>
-    </DropdownMenuTrigger>
-    
-    <DropdownMenuContent align="end" class="w-40">
-      <DropdownMenuItem
-        v-for="lang in languages"
-        :key="lang.code"
-        @click="changeLanguage(lang.code)"
-        :class="[
-          'cursor-pointer',
-          currentLocale === lang.code && 'bg-accent'
-        ]"
-      >
-        <span class="mr-2">{{ lang.flag }}</span>
-        <span>{{ lang.name }}</span>
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+  <div class="relative inline-block">
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <button class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-md hover:bg-accent transition-colors outline-none cursor-pointer focus:ring-2 focus:ring-ring">
+          <Globe class="w-4 h-4 flex-shrink-0" />
+          <span class="flex-shrink-0">{{ currentLanguage.label }}</span>
+          <ChevronDown class="w-3 h-3 flex-shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      
+      <DropdownMenuContent align="end" :sideOffset="8" class="w-44">
+        <DropdownMenuItem
+          v-for="lang in languages"
+          :key="lang.code"
+          @click="changeLanguage(lang.code)"
+          :class="currentLocale === lang.code ? 'bg-accent' : ''"
+        >
+          <div class="flex items-center gap-2 w-full">
+            <span class="text-base">{{ lang.flag }}</span>
+            <span>{{ lang.name }}</span>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
 </template>
 
 <script setup>

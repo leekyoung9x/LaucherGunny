@@ -34,6 +34,7 @@ export default {
     refreshBalance: 'Làm mới số dư',
     balanceRefreshed: 'Đã cập nhật số dư!',
     balanceRefreshError: 'Không thể cập nhật số dư',
+    language: 'Ngôn ngữ',
   },
   
   transfer: {

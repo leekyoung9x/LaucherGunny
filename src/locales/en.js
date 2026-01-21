@@ -34,6 +34,7 @@ export default {
     refreshBalance: 'Refresh Balance',
     balanceRefreshed: 'Balance updated!',
     balanceRefreshError: 'Unable to update balance',
+    language: 'Language',
   },
   
   transfer: {

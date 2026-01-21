@@ -2,13 +2,13 @@ import { createI18n } from 'vue-i18n'
 import vi from './vi'
 import en from './en'
 
-// Get locale from localStorage or default to 'vi'
-const savedLocale = localStorage.getItem('locale') || 'vi'
+// Get locale from localStorage or default to 'en'
+const savedLocale = localStorage.getItem('locale') || 'en'
 
 const i18n = createI18n({
   legacy: false, // Use Composition API
   locale: savedLocale,
-  fallbackLocale: 'vi',
+  fallbackLocale: 'en',
   messages: {
     vi,
     en,
