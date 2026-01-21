@@ -24,6 +24,13 @@ export default {
     loginSuccess: 'Login successful!',
     loginError: 'Login failed',
     logoutSuccess: 'Logged out',
+    welcomeBack: 'Welcome Back',
+    enterCredentials: 'Enter your credentials to access your account',
+    enterUsername: 'Enter username',
+    loggingIn: 'Logging in...',
+    invalidCredentials: 'Invalid username or password',
+    connectionError: 'Unable to connect to server. Please check your network connection.',
+    errorOccurred: 'An error occurred. Please try again.',
   },
   
   user: {

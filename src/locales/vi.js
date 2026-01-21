@@ -24,6 +24,13 @@ export default {
     loginSuccess: 'Đăng nhập thành công!',
     loginError: 'Đăng nhập thất bại',
     logoutSuccess: 'Đã đăng xuất',
+    welcomeBack: 'Chào mừng trở lại',
+    enterCredentials: 'Nhập thông tin đăng nhập để truy cập tài khoản',
+    enterUsername: 'Nhập tên đăng nhập',
+    loggingIn: 'Đang đăng nhập...',
+    invalidCredentials: 'Tên đăng nhập hoặc mật khẩu không đúng',
+    connectionError: 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.',
+    errorOccurred: 'Đã xảy ra lỗi. Vui lòng thử lại.',
   },
   
   user: {
